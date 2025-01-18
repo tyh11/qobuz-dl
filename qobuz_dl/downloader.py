@@ -65,7 +65,9 @@ class Download:
     def download_release(self):
         count = 0
         meta = self.client.get_album_meta(self.item_id)
-
+        if not meta.get("is_official"):
+            print(meta.get("title"))
+            raise NonStreamable("This release is not official.")
         if not meta.get("streamable"):
             raise NonStreamable("This release is not streamable")
 
@@ -137,6 +139,9 @@ class Download:
 
         if "sample" not in parse and parse["sampling_rate"]:
             meta = self.client.get_track_meta(self.item_id)
+            # import json
+            # print(json.dumps(meta, indent=4, ensure_ascii=False))
+            # exit()
             track_title = _get_title(meta)
             artist = _safe_get(meta, "performer", "name")
             logger.info(f"\n{YELLOW}Downloading: {artist} - {track_title}")
@@ -209,7 +214,7 @@ class Download:
         filename = os.path.join(root_dir, f".{tmp_count:02}.tmp")
 
         # Determine the filename
-        track_title = track_metadata.get("title")
+        track_title = track_metadata.get("id")
         artist = _safe_get(track_metadata, "performer", "name")
         filename_attr = self._get_filename_attr(artist, track_metadata, track_title)
 
@@ -217,7 +222,15 @@ class Download:
         # e.g. '{tracknumber}. {artist} - {tracktitle}'
         formatted_path = sanitize_filename(self.track_format.format(**filename_attr))
         final_file = os.path.join(root_dir, formatted_path)[:250] + extension
-
+        # print(filename,
+        #         root_dir,
+        #         final_file,
+        #         track_metadata,
+        #         album_or_track_metadata,
+        #         is_track, sep="\n")
+        # exit()
+        # import pdb; pdb.set_trace()
+        # print(json.dumps(track_metadata, indent=4, ensure_ascii=False))
         if os.path.isfile(final_file):
             logger.info(f"{OFF}{track_title} was already downloaded")
             return

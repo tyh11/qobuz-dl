@@ -45,9 +45,9 @@ def _get_title(track_dict):
 
 
 def _format_copyright(s: str) -> str:
-    if s:
-        s = s.replace("(P)", PHON_COPYRIGHT)
-        s = s.replace("(C)", COPYRIGHT)
+    a = re.match(r"\d{4} (.*) \d{4} (.*)", s)
+    if a and a.group(1) ==a.group(2):
+        return a.group(1)
     return s
 
 
@@ -124,6 +124,12 @@ def tag_flac(
     """
     audio = FLAC(filename)
 
+    artist_ = d.get("performer", {}).get("name")  # TRACK ARTIST
+    if istrack:
+        audio["ARTIST"] = artist_ or d["album"]["artist"]["name"]  # TRACK ARTIST
+    else:
+        audio["ARTIST"] = artist_ or album["artist"]["name"]
+
     audio["TITLE"] = _get_title(d)
 
     audio["TRACKNUMBER"] = str(d["track_number"])  # TRACK NUMBER
@@ -136,28 +142,27 @@ def tag_flac(
     except KeyError:
         pass
 
-    artist_ = d.get("performer", {}).get("name")  # TRACK ARTIST
-    if istrack:
-        audio["ARTIST"] = artist_ or d["album"]["artist"]["name"]  # TRACK ARTIST
-    else:
-        audio["ARTIST"] = artist_ or album["artist"]["name"]
+
 
     audio["LABEL"] = album.get("label", {}).get("name", "n/a")
 
     if istrack:
-        audio["GENRE"] = _format_genres(d["album"]["genres_list"])
+        audio["GENRE"] = ""
         audio["ALBUMARTIST"] = d["album"]["artist"]["name"]
-        audio["TRACKTOTAL"] = str(d["album"]["tracks_count"])
+        #audio["TRACKTOTAL"] = str(d["album"]["tracks_count"])
         audio["ALBUM"] = d["album"]["title"]
         audio["DATE"] = d["album"]["release_date_original"]
         audio["COPYRIGHT"] = _format_copyright(d.get("copyright") or "n/a")
     else:
-        audio["GENRE"] = _format_genres(album["genres_list"])
+        audio["GENRE"] = ""
         audio["ALBUMARTIST"] = album["artist"]["name"]
-        audio["TRACKTOTAL"] = str(album["tracks_count"])
+        #audio["TRACKTOTAL"] = str(album["tracks_count"])
         audio["ALBUM"] = album["title"]
         audio["DATE"] = album["release_date_original"]
         audio["COPYRIGHT"] = _format_copyright(album.get("copyright") or "n/a")
+
+    audio["be242671-3d48-5ac8-b762-7d2db4f584b8"] = str(d["id"])
+    audio["93a74bea-ce97-5571-a56a-c5084dba9873"] = str(d["isrc"])
 
     if em_image:
         _embed_flac_img(root_dir, audio)
