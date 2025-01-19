@@ -69,6 +69,7 @@ class Download:
             print(meta.get("title"))
             raise NonStreamable("This release is not official.")
         if not meta.get("streamable"):
+            print(meta.get("title"))
             raise NonStreamable("This release is not streamable")
 
         if self.albums_only and (
